@@ -2,9 +2,9 @@ import os
 import json
 import torch
 from torchvision.transforms import ToTensor, Compose, Resize
-from PIL import Image
+from PIL import PILImage
 
-from eval import GroundTruth
+from eval import GroundTruth, Image
 
 
 class DataLoader:
@@ -32,6 +32,8 @@ class DataLoader:
 
 
 class CocoDataset:
+    SIZE = (640, 640)
+
     def __init__(self, root_dir, annotation_file):
         self.root_dir = root_dir
 
@@ -39,23 +41,24 @@ class CocoDataset:
             self.coco_data = json.load(f)
 
         self.image_to_annotations = {}
-        self.image_to_filename = {}
+        self.images = {}
         for img in self.coco_data["images"]:
-            self.image_to_filename[img["id"]] = img["file_name"]
+            self.images[img["id"]] = img
             self.image_to_annotations[img["id"]] = []
 
         for annotation in self.coco_data["annotations"]:
             self.image_to_annotations[annotation["image_id"]].append(annotation)
 
-        self.ids = list(self.image_to_filename.keys())
+        self.ids = list(self.images.keys())
 
-        self.transform = Compose([Resize((640, 640)), ToTensor()])
+        self.transform = Compose([Resize(CocoDataset.SIZE), ToTensor()])
 
     def __getitem__(self, index):
         img_id = self.ids[index]
-        file_name = self.image_to_filename[img_id]
+        img_data = self.images[img_id]
+        file_name = img_data["file_name"]
         img_path = os.path.join(self.root_dir, file_name)
-        img = Image.open(img_path).convert("RGB")
+        img = PILImage.open(img_path).convert("RGB")
         annotations = self.image_to_annotations[img_id]
         bboxes = []
         class_ids = []
@@ -63,7 +66,11 @@ class CocoDataset:
             x, y, w, h = annotation["bbox"]
             bboxes.append([x, y, x + w, y + h])
             class_ids.append(annotation["category_id"])
-        target = [GroundTruth(class_id, bbox) for class_id, bbox in zip(class_ids, bboxes)]
+        target = Image(
+            [GroundTruth(class_id, bbox) for class_id, bbox in zip(class_ids, bboxes)],
+            (img_data["width"], img_data["height"]),
+            CocoDataset.SIZE,
+        )
         img = self.transform(img)
         return img, target
 

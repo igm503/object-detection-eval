@@ -13,12 +13,36 @@ class Detection:
     matched: bool = False
     overlap: float | None = None
 
+    def scale(self, size, original_size):
+        x1, y1, x2, y2 = self.bbox
+        width_ratio = size[0] / original_size[0]
+        height_ratio = size[1] / original_size[1]
+        self.bbox = [
+            x1 * width_ratio,
+            y1 * height_ratio,
+            x2 * width_ratio,
+            y2 * height_ratio,
+        ]
+
 
 @dataclass
 class GroundTruth:
     class_id: int
     bbox: list[float]
     matched: bool = False
+
+
+@dataclass
+class Image:
+    ground_truths: list[GroundTruth]
+    original_size: tuple[int, int]
+    processed_size: tuple[int, int]
+    detections: list[Detection] | None = None
+
+    def scale_detections(self):
+        assert self.detections is not None, "detections is None"
+        for detection in self.detections:
+            detection.scale(self.original_size, self.processed_size)
 
 
 def reset(dets_or_gts: list[list[Detection | GroundTruth]]):
