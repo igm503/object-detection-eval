@@ -1,14 +1,37 @@
 import os
 import json
 import torch
-from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor, Compose, Resize
 from PIL import Image
 
 from eval import GroundTruth
 
 
-class CocoDataset(Dataset):
+class DataLoader:
+    def __init__(self, dataset, batch_size):
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.idx = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.idx >= len(self.dataset):
+            raise StopIteration
+        batch_input = []
+        batch_target = []
+        for _ in range(self.batch_size):
+            if self.idx >= len(self.dataset):
+                break
+            input, target = self.dataset[self.idx]
+            batch_input.append(input)
+            batch_target.append(target)
+            self.idx += 1
+        return torch.stack(batch_input), batch_target
+
+
+class CocoDataset:
     def __init__(self, root_dir, annotation_file):
         self.root_dir = root_dir
 
@@ -30,28 +53,18 @@ class CocoDataset(Dataset):
 
     def __getitem__(self, index):
         img_id = self.ids[index]
-
         file_name = self.image_to_filename[img_id]
         img_path = os.path.join(self.root_dir, file_name)
         img = Image.open(img_path).convert("RGB")
-
         annotations = self.image_to_annotations[img_id]
-
         bboxes = []
         class_ids = []
         for annotation in annotations:
             x, y, w, h = annotation["bbox"]
             bboxes.append([x, y, x + w, y + h])
             class_ids.append(annotation["category_id"])
-
-        bboxes = torch.as_tensor(bboxes, dtype=torch.float32)
-        class_ids = torch.as_tensor(class_ids, dtype=torch.int64)
-        img_id = torch.tensor([img_id])
-
         target = [GroundTruth(class_id, bbox) for class_id, bbox in zip(class_ids, bboxes)]
-
         img = self.transform(img)
-
         return img, target
 
     def __len__(self):

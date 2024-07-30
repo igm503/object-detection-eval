@@ -1,7 +1,6 @@
 from ultralytics import YOLO
-from torch.utils.data import DataLoader
 
-from dataset import CocoDataset
+from dataset import CocoDataset, DataLoader
 from eval import mean_average_precision, Detection
 
 

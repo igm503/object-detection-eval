@@ -141,9 +141,3 @@ def intersection(bbox1, bbox2):
 
 def area(x1, y1, x2, y2):
     return (x2 - x1) * (y2 - y1)
-
-
-ground_truths = [[GroundTruth(0, [i, i, i+10, i+10]) for i in range(100)]] * 10
-detections = [[Detection(0, [i-1, i-1, i+10, i+10], i / 100) for i in range(100)]] * 10
-print(mean_average_precision(detections, ground_truths))
-
