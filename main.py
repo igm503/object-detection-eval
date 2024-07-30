@@ -24,7 +24,10 @@ data_loader = DataLoader(dataset, batch_size=8)
 image_metadata = []
 for image_tensors, image_data in data_loader:
     inputs = image_tensors.cuda()
-    detections = model(images)
-    ground_truths.extend(gts)
+    detections = model(inputs)
+    for img, dets in zip(image_data, detections):
+        img.detections = dets
+        img.scale_detections()
+        image_metadata.append(img)
 
-print(mean_average_precision(detections, ground_truths))
+print(mean_average_precision(image_metadata))

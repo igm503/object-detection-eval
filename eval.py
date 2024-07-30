@@ -44,44 +44,46 @@ class Image:
         for detection in self.detections:
             detection.scale(self.original_size, self.processed_size)
 
+    def reset_matches(self):
+        if self.detections is not None:
+            for det in self.detections:
+                det.matched = False
+        for gt in self.ground_truths:
+            gt.matched = False
 
-def reset(dets_or_gts: list[list[Detection | GroundTruth]]):
-    for img in dets_or_gts:
-        for det_or_gt in img:
-            det_or_gt.matched = False
 
-
-def get_classes(ground_truths: list[list[GroundTruth]]):
+def get_classes(images: list[Image]):
     classes = set()
-    for img in ground_truths:
-        for ground_truth in img:
+    for img in images:
+        for ground_truth in img.ground_truths:
             classes.add(ground_truth.class_id)
     return classes
 
 
 def mean_average_precision(
-    detections: list[list[Detection]],
-    ground_truths: list[list[GroundTruth]],
-    class_id: set[int] | None = None,
+    images: list[Image],
+    class_id: int | None = None,
 ):
     if class_id is None:
-        classes = get_classes(ground_truths)
-    num_gt = sum([len(img) for img in ground_truths])
+        class_ids = get_classes(images)
+    else:
+        class_ids = [class_id]
+    num_gt = sum([len(img.ground_truths) for img in images])
     average_precisions = []
     reset_time = 0
     match_time = 0
     precision_time = 0
     for threshold in tqdm(np.arange(0.5, 1, 0.05)):
         t0 = time()
-        reset(detections)
-        reset(ground_truths)
+        for image in images:
+            image.reset_matches()
         reset_time += time() - t0
         t0 = time()
         matched_dets = []
-        for img_dets, img_gts in zip(detections, ground_truths):
-            for class_id in classes:
-                class_dets = [det for det in img_dets if det.class_id == class_id]
-                class_gts = [gt for gt in img_gts if gt.class_id == class_id]
+        for image in images:
+            for class_id in class_ids:
+                class_dets = [det for det in image.detections if det.class_id == class_id]
+                class_gts = [gt for gt in image.ground_truths if gt.class_id == class_id]
                 new_matches = match_dets(class_dets, class_gts, threshold)
                 matched_dets.extend(new_matches)
         match_time += time() - t0
