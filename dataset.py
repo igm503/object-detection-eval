@@ -2,7 +2,7 @@ import os
 import json
 import torch
 from torchvision.transforms import ToTensor, Compose, Resize
-from PIL import PILImage
+from PIL import Image as PILImage
 
 from eval import GroundTruth, Image
 

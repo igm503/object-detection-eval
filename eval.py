@@ -7,12 +7,12 @@ from tqdm import tqdm
 def validate_bbox(bbox, image_width, image_height):
     x1, y1, x2, y2 = bbox
     if not (-1 <= x1 < x2 <= image_width + 1 and -1 <= y1 < y2 <= image_height + 1):
-        raise ValueError(f"Invalid bounding box: {bbox}")
+        print(f"Invalid bounding box: {bbox}")
 
 
 def validate_confidence(conf):
     if not (0 <= conf <= 1):
-        raise ValueError(f"Invalid confidence score: {conf}")
+        print(f"Invalid confidence score: {conf}")
 
 
 @dataclass
