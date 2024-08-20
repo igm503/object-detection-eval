@@ -60,40 +60,31 @@ def get_classes(images: list[Image]):
     return classes
 
 
-def mean_average_precision(
-    images: list[Image],
-    class_id: int | None = None,
-):
+def mean_average_precision(images: list[Image], class_id: int | None = None):
+    average_precisions = []
+    for threshold in tqdm(np.arange(0.5, 1, 0.05)):
+        average_precisions.append(average_precision(images, threshold, class_id))
+    return sum(average_precisions) / len(average_precisions)
+
+
+def average_precision(images: list[Image], threshold: float, class_id: int | None = None):
     if class_id is None:
         class_ids = get_classes(images)
     else:
         class_ids = [class_id]
     num_gt = sum([len(img.ground_truths) for img in images])
-    average_precisions = []
-    reset_time = 0
-    match_time = 0
-    precision_time = 0
-    for threshold in tqdm(np.arange(0.5, 1, 0.05)):
-        t0 = time()
-        for image in images:
-            image.reset_matches()
-        reset_time += time() - t0
-        t0 = time()
-        matched_dets = []
-        for image in images:
-            for class_id in class_ids:
-                class_dets = [det for det in image.detections if det.class_id == class_id]
-                class_gts = [gt for gt in image.ground_truths if gt.class_id == class_id]
-                new_matches = match_dets(class_dets, class_gts, threshold)
-                matched_dets.extend(new_matches)
-        match_time += time() - t0
-        t1 = time()
-        average_precisions.append(average_precision(matched_dets, num_gt, threshold))
-        precision_time += time() - t1
-    return sum(average_precisions) / len(average_precisions)
+    matched_dets = []
+    for image in images:
+        image.reset_matches()
+        for class_id in class_ids:
+            class_dets = [det for det in image.detections if det.class_id == class_id]
+            class_gts = [gt for gt in image.ground_truths if gt.class_id == class_id]
+            new_matches = match_dets(class_dets, class_gts, threshold)
+            matched_dets.extend(new_matches)
+    return compute_average_precision(matched_dets, num_gt, threshold)
 
 
-def average_precision(detections: list[Detection], num_gt: int, overlap_threshold: float):
+def compute_average_precision(detections: list[Detection], num_gt: int, overlap_threshold: float):
     detections = sorted(detections, key=lambda x: x.conf, reverse=True)
     true_positives = 0
     false_positives = 0
