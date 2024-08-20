@@ -27,7 +27,7 @@ for image_tensors, image_data in data_loader:
     detections = model(inputs)
     for img, dets in zip(image_data, detections):
         img.detections = dets
-        img.scale_detections()
+        img.prepare_detections()
         image_metadata.append(img)
 
 print(mean_average_precision(image_metadata))

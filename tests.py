@@ -39,29 +39,43 @@ def test_mean_average_precision():
     gts = [GroundTruth(1, [0, 0, 1, 1])]
     image = Image(gts, (100, 100), (100, 100), dets)
     mAP = mean_average_precision([image])
+    dets = [Detection(1, [0, 0, 1, 1], 0.9), Detection(0, [1, 1, 2, 2], 0.8)]
+    gts = [GroundTruth(1, [0, 0, 1, 1]), GroundTruth(0, [1, 1, 2, 2])]
+    image = Image(gts, (100, 100), (100, 100), dets)
+    mAP = mean_average_precision([image], class_id=0)
     assert np.isclose(mAP, 1.0)
     gts = [[GroundTruth(0, [i, i, i + 10, i + 10]) for i in range(100)]] * 10
     dets = [[Detection(0, [i - 1, i - 1, i + 10, i + 10], i / 100) for i in range(100)]] * 10
     images = [Image(gts[i], (100, 100), (100, 100), dets[i]) for i in range(10)]
     mAP = mean_average_precision(images)
-    assert abs(mAP - 0.693) < 0.001
-
+    assert np.isclose(mAP, 0.693)
+    gts = [[GroundTruth(0, [i, i, i + 10, i + 10]) for i in range(100)]] * 10
+    dets = [[Detection(0, [i - 1, i - 1, i + 10, i + 10], i / 100) for i in range(100)]] * 10
+    images = [Image(gts[i], (100, 100), (100, 100), dets[i]) for i in range(10)]
+    mAP = mean_average_precision(images)
+    assert np.isclose(mAP, 0.693)
 
 def test_average_precision_calculation():
     dets = [
         Detection(1, [0, 0, 1, 1], 0.9, True, 0.9),
         Detection(1, [1, 1, 2, 2], 0.8, False),
     ]
-    ap = compute_average_precision(dets, 2, 0.5)
-    assert ap == 0.5
+    ap = compute_average_precision(dets, 2)
+    assert np.isclose(ap, 0.5)
+    dets = [
+        Detection(1, [0, 0, 1, 1], 0.9, False),
+        Detection(1, [1, 1, 2, 2], 0.8, False),
+    ]
+    ap = compute_average_precision(dets, 2)
+    assert np.isclose(ap, 0.0)
 
 
 def test_match_dets():
     dets = [Detection(1, [0, 0, 1, 1], 0.9), Detection(1, [1, 1, 2, 2], 0.8)]
     gts = [GroundTruth(1, [0, 0, 1, 1])]
-    matched = match_dets(dets, gts, 0.5)
-    assert matched[0].matched
-    assert not matched[1].matched
+    match_dets(dets, gts, 0.5)
+    assert dets[0].matched
+    assert not dets[1].matched
 
 
 def test_iou():
@@ -79,8 +93,8 @@ def test_iou():
 def test_intersection():
     bbox1 = [0, 0, 2, 2]
     bbox2 = [1, 1, 3, 3]
-    assert intersection(bbox1, bbox2) == 1
+    assert np.isclose(intersection(bbox1, bbox2), 1)
 
 
 def test_area():
-    assert area(0, 0, 1.2, 2) == 2.4
+    assert np.isclose(area(0, 0, 1.2, 2), 2.4)
