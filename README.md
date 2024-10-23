@@ -93,3 +93,7 @@ class Detection:
 - Input images will be tensors of shape (batch_size, channels, 640, 640). No transformations will have been applied other than resizing to (640, 640).
 - All bounding box coordinates should be in absolute pixel coordinates [x1, y1, x2, y2]
 - The evaluation framework handles scaling between processed and original image sizes. Your model just needs to return coordinates in the scale of the input tensors.
+
+## License
+
+The license for this project is MIT. However, one of the example models, [yolov8](https://github.com/ultralytics/ultralytics), requires weights and a library that are not so permissively licensed.
