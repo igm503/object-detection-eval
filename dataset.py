@@ -1,8 +1,9 @@
 import os
 import json
 import torch
-from torchvision.transforms import ToTensor, Compose, Resize
+
 from PIL import Image as PILImage
+from torchvision.transforms import ToTensor, Compose, Resize
 
 from eval import GroundTruth, Image
 
